@@ -331,12 +331,10 @@ def train(render_count=-1):
       avg_loss_count = 0
 
       for head_i_epoch in range(head_epochs[head]):
-        sys.stdout.flush()
-
         iterators = (d for d in dataloaders)
 
         b_i = 0
-        for tup in itertools.izip(*iterators):
+        for tup in zip(*iterators):
           net.module.zero_grad()
 
           all_imgs = torch.zeros((config.batch_sz, config.in_channels,
