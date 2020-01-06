@@ -182,7 +182,7 @@ net.cuda()
 net = torch.nn.DataParallel(net)
 net.train()
 
-optimiser = get_opt(config.opt)(net.module.parameters(), lr=config.lr)
+optimiser = get_opt(config.opt)(net.parameters(), lr=config.lr)
 if config.restart:
   opt_path = os.path.join(config.out_dir, opt_name)
   optimiser.load_state_dict(torch.load(opt_path))
@@ -286,7 +286,7 @@ for e_i in range(next_epoch, config.num_epochs):
 
       b_i = 0
       for tup in zip(*iterators):
-        net.module.zero_grad()
+        net.zero_grad()
 
         # one less because this is before sobel
         all_imgs = torch.zeros(config.batch_sz, config.in_channels - 1,
@@ -425,17 +425,17 @@ for e_i in range(next_epoch, config.num_epochs):
   fig.savefig(os.path.join(config.out_dir, "plots.png"))
 
   if is_best or (e_i % config.save_freq == 0):
-    net.module.cpu()
+    net.cpu()
 
     if e_i % config.save_freq == 0:
-      torch.save(net.module.state_dict(),
+      torch.save(net.state_dict(),
                  os.path.join(config.out_dir, "latest_net.pytorch"))
       torch.save(optimiser.state_dict(),
                  os.path.join(config.out_dir, "latest_optimiser.pytorch"))
       config.last_epoch = e_i  # for last saved version
 
     if is_best:
-      torch.save(net.module.state_dict(),
+      torch.save(net.state_dict(),
                  os.path.join(config.out_dir, "best_net.pytorch"))
       torch.save(optimiser.state_dict(),
                  os.path.join(config.out_dir, "best_optimiser.pytorch"))
@@ -447,7 +447,7 @@ for e_i in range(next_epoch, config.num_epochs):
                 "w") as text_file:
         text_file.write("%s" % config)
 
-    net.module.cuda()
+    net.cuda()
 
   with open(os.path.join(config.out_dir, "config.pickle"),
             'wb') as outfile:

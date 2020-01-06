@@ -30,7 +30,7 @@ def train_kmeans(config, net, test_dataloader):
   max_num_pixels_per_img = int(config.max_num_kmeans_samples / num_imgs)
 
   features_all = np.zeros(
-    (config.max_num_kmeans_samples, net.module.features_sz),
+    (config.max_num_kmeans_samples, net.features_sz),
     dtype=np.float32)
 
   actual_num_features = 0
@@ -71,7 +71,7 @@ def train_kmeans(config, net, test_dataloader):
       sysout.flush()
 
     if i == 0:
-      assert (x_out.shape[1] == net.module.features_sz)
+      assert (x_out.shape[1] == net.features_sz)
       assert (x_out.shape[0] == num_unmasked)
 
     # select pixels randomly, and record how many selected
@@ -144,7 +144,7 @@ def apply_trained_kmeans(config, net, test_dataloader, kmeans):
     x_out = x_out[mask_np, :]
     targets = targets.masked_select(mask_cuda)  # can do because flat
 
-    assert (x_out.shape == (num_unmasked, net.module.features_sz))
+    assert (x_out.shape == (num_unmasked, net.features_sz))
     preds = torch.from_numpy(kmeans.predict(x_out)).cuda()
 
     preds_all[actual_num_unmasked: actual_num_unmasked + num_unmasked] = preds

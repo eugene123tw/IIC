@@ -149,7 +149,7 @@ net.cuda()
 net = torch.nn.DataParallel(net)
 net.train()
 
-optimiser = get_opt(config.opt)(net.module.parameters(), lr=config.lr)
+optimiser = get_opt(config.opt)(net.parameters(), lr=config.lr)
 if config.restart:
   opt_path = os.path.join(config.out_dir, "latest_optimiser.pytorch")
   if taking_best:
@@ -203,7 +203,7 @@ for e_i in xrange(next_epoch, config.num_epochs):
 
   b_i = 0
   for tup in itertools.izip(*iterators):
-    net.module.zero_grad()
+    net.zero_grad()
 
     imgs_orig = tup[0][0].cuda()
     imgs_pos = tup[1][0].cuda()
@@ -272,22 +272,22 @@ for e_i in xrange(next_epoch, config.num_epochs):
   fig.savefig(os.path.join(config.out_dir, "plots.png"))
 
   if is_best or (e_i % config.save_freq == 0):
-    net.module.cpu()
+    net.cpu()
 
     if is_best:
-      torch.save(net.module.state_dict(),
+      torch.save(net.state_dict(),
                  os.path.join(config.out_dir, "best_net.pytorch"))
       torch.save(optimiser.state_dict(),
                  os.path.join(config.out_dir, "best_optimiser.pytorch"))
 
     if e_i % config.save_freq == 0:
-      torch.save(net.module.state_dict(),
+      torch.save(net.state_dict(),
                  os.path.join(config.out_dir, "latest_net.pytorch"))
       torch.save(optimiser.state_dict(),
                  os.path.join(config.out_dir, "latest_optimiser.pytorch"))
       config.last_epoch = e_i  # for last saved version
 
-    net.module.cuda()
+    net.cuda()
 
   with open(os.path.join(config.out_dir, "config.pickle"),
             'wb') as outfile:

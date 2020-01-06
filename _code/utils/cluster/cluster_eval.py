@@ -1,4 +1,5 @@
 from __future__ import print_function
+from typing import *
 
 import itertools
 import sys
@@ -12,10 +13,22 @@ from .eval_metrics import _hungarian_match, _original_match, _acc
 from .transforms import sobel_process
 
 
-def _clustering_get_data(config, net, dataloader, sobel=False,
-                         using_IR=False, get_soft=False, verbose=0):
-  """
-  Returns cuda tensors for flat preds and targets.
+def _clustering_get_data(config: Any, net: Any, dataloader, sobel=False,
+                         using_IR=False, get_soft=False, verbose=0) -> Tuple[List[int], List[int]]:
+  """ Returns cuda tensors for flat preds and targets.
+
+  Args:
+    config:
+    net:
+    dataloader:
+    sobel:
+    using_IR:
+    get_soft:
+    verbose:
+
+  Returns:
+    flat_predss_all: List[List[int]]
+    flat_targets_all: List[List[int]]
   """
 
   assert (not using_IR)  # sanity; IR used by segmentation only
@@ -43,7 +56,7 @@ def _clustering_get_data(config, net, dataloader, sobel=False,
     flat_targets = batch[1]
 
     with torch.no_grad():
-      x_outs = net(imgs)
+      x_outs = net(imgs)  # head_B -> outputs 5 heads
 
     assert (x_outs[0].shape[1] == config.output_k)
     assert (len(x_outs[0].shape) == 2)
@@ -53,7 +66,7 @@ def _clustering_get_data(config, net, dataloader, sobel=False,
 
     start_i = b_i * config.batch_sz
     for i in range(config.num_sub_heads):
-      x_outs_curr = x_outs[i]
+      x_outs_curr = x_outs[i]  # head_B -> outputs 5 heads
       flat_preds_curr = torch.argmax(x_outs_curr, dim=1)  # along output_k
       flat_predss_all[i][start_i:(start_i + num_test_curr)] = flat_preds_curr
 
@@ -151,15 +164,29 @@ def _get_assignment_data_matches(net, mapping_assignment_dataloader, config,
                                  get_data_fn=None,
                                  just_matches=False,
                                  verbose=0):
-  """
-  Get all best matches per head based on train set i.e. mapping_assign,
+  """ Get all best matches per head based on train set i.e. mapping_assign,
   and mapping_assign accs.
+
+  Args:
+    net:
+    mapping_assignment_dataloader:
+    config:
+    sobel:
+    using_IR:
+    get_data_fn:
+    just_matches:
+    verbose:
+
+  Returns:
+
+
   """
 
   if verbose:
     print("calling cluster eval direct (helper) %s" % datetime.now())
     sys.stdout.flush()
 
+  # flat_predss_all -> 5 heads so it has 5 MNIST datasets each with 70,000 samples
   flat_predss_all, flat_targets_all = \
     get_data_fn(config, net, mapping_assignment_dataloader, sobel=sobel,
                 using_IR=using_IR,
@@ -190,6 +217,8 @@ def _get_assignment_data_matches(net, mapping_assignment_dataloader, config,
                                                         datetime.now()))
       sys.stdout.flush()
 
+    # Clusters are arbitrary and don't strictly match with the real class,
+    # so we have to map cluster to class with some assignment algorithm
     if config.eval_mode == "hung":
       match = _hungarian_match(flat_predss_all[i], flat_targets_all,
                                preds_k=config.output_k,
@@ -213,6 +242,7 @@ def _get_assignment_data_matches(net, mapping_assignment_dataloader, config,
       reordered_preds = torch.zeros(num_samples,
                                     dtype=flat_predss_all[0].dtype).cuda()
 
+      # map cluster to class base on Hungarian assignment algorithm
       for pred_i, target_i in match:
         #reordered_preds[flat_predss_all[i] == pred_i] = target_i
         reordered_preds[torch.eq(flat_predss_all[i], int(pred_i))] = torch.from_numpy(np.array(target_i)).cuda().int().item()
@@ -245,7 +275,7 @@ def get_subhead_using_loss(config, dataloaders_head_B, net, sobel, lamb,
   b_i = 0
   loss_per_sub_head = np.zeros(config.num_sub_heads)
   for tup in itertools.izip(*iterators):
-    net.module.zero_grad()
+    net.zero_grad()
 
     dim = config.in_channels
     if sobel:

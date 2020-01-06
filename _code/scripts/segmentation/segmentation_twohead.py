@@ -173,7 +173,7 @@ def train():
   net = torch.nn.DataParallel(net)
   net.train()
 
-  optimiser = get_opt(config.opt)(net.module.parameters(), lr=config.lr)
+  optimiser = get_opt(config.opt)(net.parameters(), lr=config.lr)
   if config.restart:
     optimiser.load_state_dict(dict["optimiser"])
 
@@ -260,7 +260,7 @@ def train():
       avg_loss_count = 0
 
       for tup in zip(*iterators):
-        net.module.zero_grad()
+        net.zero_grad()
 
         if not config.no_sobel:
           pre_channels = config.in_channels - 1
@@ -417,8 +417,8 @@ def train():
     fig.savefig(os.path.join(config.out_dir, "plots.png"))
 
     if is_best or (e_i % config.save_freq == 0):
-      net.module.cpu()
-      save_dict = {"net": net.module.state_dict(),
+      net.cpu()
+      save_dict = {"net": net.state_dict(),
                    "optimiser": optimiser.state_dict()}
 
       if e_i % config.save_freq == 0:
@@ -436,7 +436,7 @@ def train():
                   "w") as text_file:
           text_file.write("%s" % config)
 
-      net.module.cuda()
+      net.cuda()
 
     with open(os.path.join(config.out_dir, "config.pickle"), 'wb') as outfile:
       pickle.dump(config, outfile)

@@ -206,7 +206,7 @@ if config.restart:
 net.cuda()
 net = torch.nn.DataParallel(net)
 
-optimiser = get_opt(config.opt)(net.module.parameters(), lr=config.lr)
+optimiser = get_opt(config.opt)(net.parameters(), lr=config.lr)
 if config.restart:
   if not choose_best:
     optimiser.load_state_dict(
@@ -239,7 +239,7 @@ else:
 
   if (not config.no_pre_eval):
     torch.cuda.empty_cache()
-    net.module.eval()
+    net.eval()
     acc, nmi, ari, masses = kmeans_segmentation_eval(config, net,
                                                      mapping_assignment_test_dataloader)
     config.epoch_acc.append(acc)
@@ -259,7 +259,7 @@ crossent = torch.nn.CrossEntropyLoss(reduction="none").cuda()
 for e_i in range(next_epoch, config.num_epochs):
   torch.cuda.empty_cache()
 
-  net.module.train()
+  net.train()
   is_best = False
 
   if e_i in config.lr_schedule:
@@ -268,7 +268,7 @@ for e_i in range(next_epoch, config.num_epochs):
   avg_loss = 0.  # over epoch
 
   for b_i, tup in enumerate(dataloader):
-    net.module.zero_grad()
+    net.zero_grad()
 
     img, mask = tup  # cuda
 
@@ -305,7 +305,7 @@ for e_i in range(next_epoch, config.num_epochs):
   avg_loss = float(avg_loss)
 
   torch.cuda.empty_cache()
-  net.module.eval()
+  net.eval()
 
   acc, nmi, ari, masses = kmeans_segmentation_eval(config, net,
                                                    mapping_assignment_test_dataloader)
@@ -343,27 +343,27 @@ for e_i in range(next_epoch, config.num_epochs):
 
   if is_best or (e_i % 10 == 0) or config.save_multiple:
     # save cpu version
-    net.module.cpu()
+    net.cpu()
 
     if is_best:
-      torch.save(net.module.state_dict(),
+      torch.save(net.state_dict(),
                  os.path.join(config.out_dir, "best_net.pytorch"))
       torch.save(optimiser.state_dict(),
                  os.path.join(config.out_dir, "best_optimiser.pytorch"))
 
     # save model sparingly for this script
     if e_i % 10 == 0:
-      torch.save(net.module.state_dict(),
+      torch.save(net.state_dict(),
                  os.path.join(config.out_dir, "latest_net.pytorch"))
       torch.save(optimiser.state_dict(),
                  os.path.join(config.out_dir, "latest_optimiser.pytorch"))
       config.last_epoch = e_i  # for last saved version
 
     if config.save_multiple and (e_i % 3 == 0):
-      torch.save(net.module.state_dict(),
+      torch.save(net.state_dict(),
                  os.path.join(config.out_dir, "e_%d_net.pytorch" % e_i))
 
-    net.module.cuda()
+    net.cuda()
 
   with open(os.path.join(config.out_dir, "config.pickle"),
             "wb") as outfile:

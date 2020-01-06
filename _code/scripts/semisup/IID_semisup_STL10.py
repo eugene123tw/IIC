@@ -181,11 +181,11 @@ def main():
   net = torch.nn.DataParallel(net)
 
   opt_trunk = torch.optim.Adam(
-    net.module.trunk.parameters(),
+    net.trunk.parameters(),
     lr=config.trunk_lr
   )
   opt_head = torch.optim.Adam(
-    net.module.head.parameters(),
+    net.head.parameters(),
     lr=(config.head_lr)
   )
 
@@ -292,10 +292,10 @@ def main():
     fig.savefig(os.path.join(config.out_dir, "plots.png"))
 
     if is_best or (e_i % 10 == 0):
-      net.module.cpu()
+      net.cpu()
 
       if is_best:
-        torch.save(net.module.state_dict(),
+        torch.save(net.state_dict(),
                    os.path.join(config.out_dir, "best_net.pytorch"))
         torch.save({"opt_head": opt_head.state_dict(),
                     "opt_trunk": opt_trunk.state_dict()},
@@ -304,14 +304,14 @@ def main():
 
       # save model sparingly for this script
       if e_i % 10 == 0:
-        torch.save(net.module.state_dict(),
+        torch.save(net.state_dict(),
                    os.path.join(config.out_dir, "latest_net.pytorch"))
         torch.save({"opt_head": opt_head.state_dict(),
                     "opt_trunk": opt_trunk.state_dict()},
                    os.path.join(config.out_dir,
                                 "latest_optimiser.pytorch"))
 
-      net.module.cuda()
+      net.cuda()
 
       config.last_epoch = e_i  # for last saved version
 
