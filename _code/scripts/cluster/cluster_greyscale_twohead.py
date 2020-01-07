@@ -335,15 +335,14 @@ def train(render_count=-1):
 
         b_i = 0
         for tup in zip(*iterators):
-          net.zero_grad()
+          optimiser.zero_grad()
 
           all_imgs = torch.zeros((config.batch_sz, config.in_channels,
                                   config.input_sz,
                                   config.input_sz), requires_grad=True).cuda()
           all_imgs_tf = torch.zeros((config.batch_sz, config.in_channels,
                                      config.input_sz,
-                                     config.input_sz),
-                                    requires_grad=True).cuda()
+                                     config.input_sz), requires_grad=True).cuda()
 
           imgs_curr = tup[0][0]  # always the first
           curr_batch_sz = imgs_curr.size(0)
@@ -353,6 +352,7 @@ def train(render_count=-1):
 
             actual_batch_start = d_i * curr_batch_sz
             actual_batch_end = actual_batch_start + curr_batch_sz
+            # TODO: all_imgs: no differences between batches for some reason
             all_imgs[actual_batch_start:actual_batch_end, :, :, :] = \
               imgs_curr.cuda()
             all_imgs_tf[actual_batch_start:actual_batch_end, :, :, :] = \
@@ -362,7 +362,7 @@ def train(render_count=-1):
             print("last batch sz %d" % curr_batch_sz)
 
           curr_total_batch_sz = curr_batch_sz * config.num_dataloaders  #
-          # times 2
+          # times 2?????????????????
           all_imgs = all_imgs[:curr_total_batch_sz, :, :, :]
           all_imgs_tf = all_imgs_tf[:curr_total_batch_sz, :, :, :]
 
