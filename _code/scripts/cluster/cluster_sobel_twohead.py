@@ -5,14 +5,13 @@ import itertools
 import os
 import pickle
 import sys
-sys.path.append('home/se26956/projects/IIC')
+
 from datetime import datetime
 
 import matplotlib
 import numpy as np
 import torch
 
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 import _code.archs as archs
@@ -22,11 +21,7 @@ from _code.utils.cluster.cluster_eval import cluster_eval, get_subhead_using_los
 from _code.utils.cluster.data import cluster_twohead_create_dataloaders
 from _code.utils.cluster.IID_losses import IID_loss
 
-"""
-  Fully unsupervised clustering ("IIC" = "IID").
-  Train and test script (coloured datasets).
-  Network has two heads, for overclustering and final clustering.
-"""
+
 
 # Options ----------------------------------------------------------------------
 
@@ -54,7 +49,7 @@ parser.add_argument("--num_dataloaders", type=int, default=3)
 parser.add_argument("--num_sub_heads", type=int, default=5)  # per head...
 
 parser.add_argument("--out_root", type=str,
-                    default="/data/se26956/IID/")
+                    default="/home/eugene/git/IIC/log")
 parser.add_argument("--restart", dest="restart", default=False,
                     action="store_true")
 parser.add_argument("--restart_from_best", dest="restart_from_best",
@@ -107,7 +102,29 @@ parser.add_argument("--cutout", default=False, action="store_true")
 parser.add_argument("--cutout_p", type=float, default=0.5)
 parser.add_argument("--cutout_max_box", type=float, default=0.5)
 
-config = parser.parse_args()
+# config = parser.parse_args()
+
+
+## CIFAR10 (640)
+config = parser.parse_args(['--model_ind', '640',
+                   '--arch', 'ClusterNet5gTwoHead',
+                   '--mode', 'IID',
+                   '--dataset', 'CIFAR10',
+                   '--dataset_root', '/home/eugene/_DATASETS/PYTORCH_VISION',
+                   '--gt_k', '10',
+                   '--output_k_A', '70',
+                   '--output_k_B', '10',
+                   '--lamb', '1.0',
+                   '--lr', '0.0001',
+                   '--num_epochs', '2000',
+                   '--batch_sz', '660',
+                   '--num_dataloaders', '3',
+                   '--num_sub_heads', '5',
+                   '--crop_orig',
+                   '--rand_crop_sz', '20',
+                   '--input_sz', '32',
+                   '--head_A_first',
+                   '--head_B_epochs', '2'])
 
 # Setup ------------------------------------------------------------------------
 
@@ -169,8 +186,8 @@ else:
 
 # Model ------------------------------------------------------------------------
 
-dataloaders_head_A, dataloaders_head_B, mapping_assignment_dataloader, \
-mapping_test_dataloader = cluster_twohead_create_dataloaders(config)
+dataloaders_head_A, dataloaders_head_B, mapping_assignment_dataloader, mapping_test_dataloader = \
+  cluster_twohead_create_dataloaders(config)
 
 net = archs.__dict__[config.arch](config)
 if config.restart:
